@@ -1,0 +1,30 @@
+{
+  "name": "fe-service",
+  "version": "1.0.0",
+  "description": "一个专为前端提供的服务层",
+  "main": "app.js",
+  "dependencies": {
+    "koa": "^2.5.2",
+    "koa-body": "^4.0.4",
+    "koa-send": "^5.0.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2"
+  },
+  "devDependencies": {
+    "pm2": "^3.0.3"
+  },
+  "scripts": {
+    "start": "pm2 start app.json && pm2 log",
+    "stop": "pm2 kill && pm2 list"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fedhong/fe-service.git"
+  },
+  "author": "洪亮",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fedhong/fe-service/issues"
+  },
+  "homepage": "https://github.com/fedhong/fe-service#readme"
+}
