@@ -13,5 +13,15 @@
         "location" : "/test",
         "proxy_pass" : "http://localhost:8080",
         "transmit_location" : true
+    },
+    {
+        "location" : "/mfepro/xianfu/queenbee1",
+        "proxy_pass" : "http://queenbee.m.waimai.dev.sankuai.com",
+        "transmit_location" : false
+    },
+    {
+        "location" : "/mfepro/xianfu/queenbee",
+        "proxy_pass" : "http://mfe.waimai.dev.sankuai.com",
+        "transmit_location" : true
     }
 ]

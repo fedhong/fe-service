@@ -42,6 +42,7 @@ async function _startProxy(ctx, apiUrl) {
     ctx.body = request(options).on('error', error => {
         console.error(error)
     }).on('response', response => {
+        console.log(`${ctx.request.method} ${apiUrl} ${response.statusCode}`)
         ctx.status = response.statusCode
         for(let key in response.headers) {
             // http://stackoverflow.com/questions/35525715/http-get-parse-error-code-hpe-unexpected-content-length
