@@ -1,3 +1,4 @@
+const fs = require('fs')
 const request = require('request')
 const requestPromise = require('request-promise')
 const passThrough = require('stream').PassThrough;
@@ -22,81 +23,78 @@ function _getApiUrl(ctx) {
     return apiUrl
 }
 
-async function _startProxy(ctx, apiUrl) {
+function _getParsedBody(ctx) {
 
-    const transHeaders = Object.assign(ctx.request.headers, { 'host': apiUrl.split('/')[2] })
-    
-    // 删除content-length
-    delete transHeaders['content-length']
-    
-    const parsedBody = getParsedBody(ctx)
+    const options = {}
 
-    const options = {
-        url: apiUrl,
-        method: ctx.request.method,
-        headers: transHeaders,
-        encoding: null,
-        body: parsedBody
-    }
-   
-    ctx.body = request(options).on('error', error => {
-        console.error(error)
-    }).on('response', response => {
-        console.log(`${ctx.request.method} ${apiUrl} ${response.statusCode}`)
-        ctx.status = response.statusCode
-        for(let key in response.headers) {
-            // http://stackoverflow.com/questions/35525715/http-get-parse-error-code-hpe-unexpected-content-length
-            if(key != 'transfer-encoding'){
-                ctx.set(key, response.headers[key])
-            }            
+    const files = ctx.request.files
+    if (files && Object.keys(files).length > 0) {
+        let formData = {}
+        for (let key in files) {
+            formData[key] = fs.createReadStream(files[key].path)
         }
-    }).pipe(passThrough())    
-     /*
-    if(ctx.request.method == 'GET'){
-        ctx.body = request(options).on('error', error => {
-            console.error(error)
-        }).on('response', response => {
-            ctx.status = response.statusCode
-            for(let key in response.headers) {
-                ctx.set(key, response.headers[key])
+        const body = ctx.request.body
+        if (body && Object.keys(body).length > 0) {
+            for (let key in body) {
+                formData[key] = body[key]
             }
-        }).pipe(passThrough())
-    }else{
-        await new Promise((resolve, reject) => {
-            request.post(options, (error, response, body) => {
-                for(let key in response.headers) {
-                    // http://stackoverflow.com/questions/35525715/http-get-parse-error-code-hpe-unexpected-content-length
-                    if(key != 'transfer-encoding'){
-                        ctx.set(key, response.headers[key])
-                    }   
-                }
-                ctx.status = response.statusCode
-                ctx.body = response.body
-                resolve()
-            })
-        }) 
-    }
-    */
-    
-    function getParsedBody(ctx) {
-        let body = ctx.request.body
-        if (body === undefined || body === null || Object.keys(body).length === 0) {
-            return undefined
         }
-        var contentType = ctx.request.header['content-type']
-        if (!Buffer.isBuffer(body) && typeof body !== 'string') {
-            if (contentType && contentType.indexOf('json') !== -1) {
-                body = JSON.stringify(body)
-            }else{
+
+        options.formData = formData
+    } else {
+        const body = ctx.request.body
+        if (body && Object.keys(body).length > 0) {
+            const contentType = ctx.request.header['content-type'] || ''
+            if (~contentType.toLowerCase().indexOf('application/json')) {
+                options.body = JSON.stringify(body)
+            } else if (~contentType.toLowerCase().indexOf('application/x-www-form-urlencoded')) {
                 const params = []
                 Object.keys(body).forEach(key => {
                     params.push(`${key}=${body[key]}`)
                 })
-                body = params.join('&')
+                options.form = params.join('&')
+            } else {
+                options.body = body
             }
         }
-        return body
     }
+
+    return options
+}
+
+async function _startProxy(ctx, apiUrl) {
+
+    const transHeaders = Object.assign(ctx.request.headers, { 'host': apiUrl.split('/')[2] })
+
+    // 删除content-length
+    delete transHeaders['content-length']
+
+    let options = {
+        url: apiUrl,
+        method: ctx.request.method,
+        headers: transHeaders,
+        encoding: null
+    }
+
+    options = Object.assign(options, _getParsedBody(ctx))
+
+    await new Promise(resolve => {
+        ctx.body = request(options).on('error', error => {
+            console.error(error)
+            resolve()
+        }).on('response', response => {
+            console.log(`${ctx.request.method} ${apiUrl} ${response.statusCode}`)
+            ctx.status = response.statusCode
+            for (let key in response.headers) {
+                // http://stackoverflow.com/questions/35525715/http-get-parse-error-code-hpe-unexpected-content-length
+                if (key != 'transfer-encoding') {
+                    ctx.set(key, response.headers[key])
+                }
+            }
+            resolve()
+        }).pipe(passThrough())
+    })
+
 }
 
 module.exports = async (ctx, next) => {
