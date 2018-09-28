@@ -5,7 +5,7 @@ const interceptor = require('./app/middleware/interceptor')
 const statics = require('./app/middleware/static')
 const proxy = require('./app/middleware/proxy')
 const notfound = require('./app/middleware/notfound')
-const test = require('./app/controller/test')
+const controller = require('./app/controller/index')
 
 const app = new Koa()
 
@@ -18,7 +18,7 @@ const middlewares = compose([
             keepExtensions: true
         }
     }),
-    test,
+    controller,
     proxy,
     notfound
 ]);
