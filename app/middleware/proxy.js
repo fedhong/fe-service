@@ -1,6 +1,5 @@
 const fs = require('fs')
 const request = require('request')
-const requestPromise = require('request-promise')
 const passThrough = require('stream').PassThrough;
 const server = require('../config/server')
 
@@ -80,7 +79,7 @@ async function _startProxy(ctx, apiUrl) {
 
     await new Promise(resolve => {
         ctx.body = request(options).on('error', error => {
-            console.error(error)
+            console.error(error.stack)
             resolve()
         }).on('response', response => {
             console.log(`${ctx.request.method} ${apiUrl} ${response.statusCode}`)
