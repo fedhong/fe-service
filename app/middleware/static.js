@@ -1,5 +1,5 @@
 const send = require('koa-send')
-const conf = require('../config/conf')
+const conf = require('../config/config')
 
 module.exports = async function (ctx, next) {
 
